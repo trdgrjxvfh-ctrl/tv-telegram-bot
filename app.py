@@ -7,12 +7,10 @@ app = Flask(__name__)
 TOKEN = os.environ.get("TELEGRAM_TOKEN")
 CHAT_ID = os.environ.get("CHAT_ID")
 
-def send_telegram(msg):
+def send_telegram(msg: str):
     url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
-    requests.post(url, json={
-        "chat_id": CHAT_ID,
-        "text": msg
-    })
+    r = requests.post(url, json={"chat_id": CHAT_ID, "text": msg}, timeout=20)
+    return r.text
 
 @app.route("/")
 def home():
@@ -20,29 +18,29 @@ def home():
 
 @app.route("/test")
 def test():
-    send_telegram("✅ Bot Render OK. Funciona correctamente.")
-    return "Sent"
+    resp = send_telegram("✅ Bot Render OK. Funciona correctamente.")
+    return f"Enviado. Telegram dice: {resp}"
 
 @app.route("/webhook", methods=["POST"])
 def webhook():
-    data = request.get_json(force=True)
+    data = request.get_json(force=True) or {}
 
-    symbol = data.get("symbol", "MNQ")
-    side = data.get("side", "N/A")
-    tf = data.get("tf", "N/A")
-    price = data.get("price", "N/A")
+    simbolo = data.get("Simbolo", "MNQ")
+    side = data.get("Side", "N/A")
+    tf = data.get("Tf", "N/A")
+    precio = data.get("Precio", "N/A")
 
-    message = (
-        "📢 SEÑAL MNQ\n"
-        f"📌 {symbol}\n"
+    mensaje = (
+        f"📢 SEÑAL\n"
+        f"📌 {simbolo}\n"
         f"➡️ {side}\n"
         f"⏱ TF: {tf}\n"
-        f"💰 Precio: {price}"
+        f"💰 Precio: {precio}"
     )
 
-    send_telegram(message)
+    send_telegram(mensaje)
     return "OK"
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 10000))
+    port = int(os.environ.get("PORT", "10000"))
     app.run(host="0.0.0.0", port=port)
